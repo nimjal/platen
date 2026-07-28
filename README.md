@@ -15,7 +15,7 @@ way.
 ```
 npm install
 npm run dev      # dev server with hot reload
-npm run build    # type-check and bundle to dist/
+npm run build    # type-check and bundle to docs/
 npm run preview  # serve the production build
 npm test         # curriculum, engine, scores and app tests
 ```
