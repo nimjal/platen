@@ -1,7 +1,7 @@
 {
   "name": "touch-typing",
   "private": true,
-  "version": "3.0.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "A QWERTY touch typing tutor that runs in the browser. Eleven chapters, calculated lessons, scores kept locally.",
   "license": "MIT",

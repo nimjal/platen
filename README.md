@@ -8,6 +8,10 @@ score kept locally.
 No accounts, no network requests, no analytics. Open `index.html` from a static
 host and it works.
 
+**It is also live at <https://nimjal.github.io/platen/>**, if you would rather
+not host it yourself. Scores are kept in that browser's `localStorage` either
+way.
+
 ```
 npm install
 npm run dev      # dev server with hot reload
