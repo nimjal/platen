@@ -1,0 +1,40 @@
+{
+  "name": "touch-typing",
+  "private": true,
+  "version": "3.0.0",
+  "type": "module",
+  "description": "A QWERTY touch typing tutor that runs in the browser. Eleven chapters, calculated lessons, scores kept locally.",
+  "license": "MIT",
+  "keywords": [
+    "typing",
+    "touch-typing",
+    "qwerty",
+    "typing-tutor",
+    "keyboard",
+    "react",
+    "typescript"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "happy-dom": "^20.11.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
+  }
+}

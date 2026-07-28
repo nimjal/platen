@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Typing — QWERTY Touch Typing Tutor</title>
+    <meta name="description" content="A QWERTY touch typing tutor that runs in the browser. Eleven chapters take you from the home row to full passages, with every score kept on your own machine.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#d6d4ca" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#15191a" media="(prefers-color-scheme: dark)">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='3' fill='%2315191a'/%3E%3Cg fill='%2339413f'%3E%3Ccircle cx='6' cy='8' r='1.5'/%3E%3Ccircle cx='13' cy='8' r='1.5'/%3E%3Ccircle cx='20' cy='8' r='1.5'/%3E%3Ccircle cx='27' cy='8' r='1.5'/%3E%3Ccircle cx='6' cy='24' r='1.5'/%3E%3Ccircle cx='13' cy='24' r='1.5'/%3E%3Ccircle cx='20' cy='24' r='1.5'/%3E%3Ccircle cx='27' cy='24' r='1.5'/%3E%3C/g%3E%3Crect x='12.5' y='4' width='7' height='24' fill='%23ffb13d' opacity='.14'/%3E%3Crect x='12.5' y='25.5' width='7' height='2.5' fill='%23ffb13d'/%3E%3C/svg%3E">
+    <script>
+      // Apply the stored colour scheme before first paint to avoid a flash.
+      try {
+        const stored = localStorage.getItem('typing.theme')
+        if (stored === 'light' || stored === 'dark') {
+          document.documentElement.style.colorScheme = stored
+        }
+      } catch { /* storage unavailable */ }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div class="noscript">
+        <strong>This tutor needs JavaScript.</strong>
+        <span>Enable JavaScript in your browser to practise typing.</span>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,1388 @@
+/* ==========================================================================
+   Typing — QWERTY touch typing tutor
+
+   Direction: teletype. The tutor is drawn as the machine that taught the
+   skill — a milled chassis, a recessed tape well, indicator lamps for the
+   fingers. Two rules hold the whole thing together:
+
+   1. The head never moves. The tape does. That is what touch typing is.
+   2. Colour belongs to the fingers. Five hues, one per finger, and nothing
+      else in the interface is allowed to be coloured.
+
+   The tape is perforated at exactly one character per hole, so the holes
+   scroll past at your keystroke rate and cadence becomes visible.
+   ========================================================================== */
+
+:root {
+  color-scheme: light dark;
+
+  /* Chassis, deck, and the well the tape runs in. */
+  --chassis:  light-dark(#d6d4ca, #15191a);
+  --deck:     light-dark(#f0efe9, #1b2022);
+  --deck-2:   light-dark(#e6e4db, #232a2c);
+  --tape:     light-dark(#fdfcf8, #0e1112);
+  --rule:     light-dark(#c3c0b5, #2a3134);
+  --rule-2:   light-dark(#a9a69a, #3a4245);
+  --perf:     light-dark(#bebbaf, #3a4341);
+
+  --ink:       light-dark(#14171a, #eeece6);
+  --ink-dim:   light-dark(#55584f, #9aa09c);
+  --ink-faint: light-dark(#84867d, #666d6c);
+
+  /* The primary action is a slab of ink, not a coloured button. */
+  --slab:    light-dark(#14171a, #eeece6);
+  --slab-on: light-dark(#fcfbf7, #14171a);
+
+  --pass: light-dark(#0e7a45, #4fcb86);
+  --fail: light-dark(#b32c1e, #ff6a57);
+  --hold: light-dark(#8a6208, #e8b03c);
+
+  /* Fingers, running from the strongest to the weakest. */
+  --f-index:  light-dark(#9c5a06, #ffb13d);
+  --f-middle: light-dark(#05706b, #35c9c2);
+  --f-ring:   light-dark(#2e4cbe, #82a4ff);
+  --f-pinky:  light-dark(#a22c7e, #ee7fc9);
+  --f-thumb:  light-dark(#6b6e67, #8e938b);
+  --f-none:   light-dark(#9a9c93, #4a5053);
+
+  --sans: "Archivo Variable", ui-sans-serif, system-ui, -apple-system,
+          "Segoe UI", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --tape-size: clamp(1.4rem, 3.1vw, 2.2rem);
+  --r: 2px;
+  --key-hue: var(--f-none);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--chassis);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p,
+dl,
+dd,
+ol,
+ul {
+  margin: 0;
+}
+
+ol,
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: var(--r);
+}
+
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Instrument-panel lettering: narrow, tracked out, tiny. */
+.eyebrow {
+  font-size: 0.625rem;
+  font-weight: 600;
+  font-stretch: 86%;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* --------------------------------------------------------------- shell -- */
+
+.app {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  min-block-size: 100dvh;
+}
+
+/* ------------------------------------------------------------ nameplate -- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  padding: 0.7rem clamp(0.9rem, 2.5vw, 1.5rem);
+  background: var(--chassis);
+  border-block-end: 1px solid var(--rule);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: none;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-stretch: 74%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* Three sprocket holes — a fragment of the tape, used as the maker's mark. */
+.brand-mark {
+  inline-size: 22px;
+  block-size: 14px;
+  border: 1px solid var(--rule-2);
+  border-radius: 1px;
+  background-image: radial-gradient(
+    circle,
+    var(--ink-faint) 0 1.3px,
+    transparent 1.5px
+  );
+  background-size: 6px 4px;
+  background-position: 1px center;
+  background-repeat: repeat-x;
+}
+
+.topbar-lesson {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  min-inline-size: 0;
+  flex: 1;
+}
+
+.topbar-lesson .stamp {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+
+.topbar-lesson h1 {
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: none;
+}
+
+.tally {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3em;
+  margin-inline-end: 0.35rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+
+.tally strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------- tab-stop ruler -- */
+/* The curriculum, set out like the tab stops above a platen. Each stop is
+   labelled with the keys that unit teaches; the scale beneath it is drawn in
+   the hues of the fingers those keys belong to, and fills as you pass. */
+
+.ruler {
+  position: relative;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-inline: clamp(0.9rem, 2.5vw, 1.5rem);
+  background: var(--chassis);
+  border-block-end: 1px solid var(--rule);
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-2) transparent;
+}
+
+.ruler-list {
+  display: flex;
+  align-items: stretch;
+  min-inline-size: 100%;
+}
+
+.stop {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 0.15rem;
+  align-content: start;
+  block-size: 100%;
+  padding: 0.5rem 0.7rem 0.55rem;
+  color: var(--ink-faint);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+/* Every stop carries its tick, the way a ruler does. */
+.stop::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 1px;
+  block-size: 6px;
+  background: var(--rule-2);
+}
+
+.stop-no {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--ink-faint);
+}
+
+.stop-title {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  line-height: 1.15;
+  color: var(--ink-dim);
+}
+
+.stop:hover {
+  background: var(--deck-2);
+}
+
+.stop:hover .stop-title {
+  color: var(--ink);
+}
+
+.stop.is-current {
+  background: var(--slab);
+}
+
+.stop.is-current .stop-no {
+  color: color-mix(in oklab, var(--slab-on) 60%, transparent);
+}
+
+.stop.is-current .stop-title {
+  color: var(--slab-on);
+}
+
+/* The scale: one segment per finger the unit trains, drawn twice — a ghost
+   the full width, and a lit copy masked to the share of lessons passed. */
+.stop-scale {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline: 0.7rem;
+  block-size: 2px;
+}
+
+.scale-row {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 1px;
+}
+
+.scale-row i {
+  flex: 1;
+  background: var(--key-hue);
+}
+
+.scale-ghost {
+  opacity: 0.28;
+}
+
+.scale-fill {
+  mask-image: linear-gradient(
+    to right,
+    #000 0 var(--fill, 0%),
+    transparent var(--fill, 0%)
+  );
+}
+
+/* --------------------------------------------------------------- stage -- */
+
+.stage {
+  inline-size: min(70rem, 100%);
+  margin-inline: auto;
+  padding: clamp(1rem, 2.5vw, 1.75rem) clamp(0.9rem, 2.5vw, 1.5rem) 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Section leader: the five drills that make up a unit. */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  border-block-end: 1px solid var(--rule);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.45rem 0.85rem;
+  margin-block-end: -1px;
+  border-block-end: 2px solid transparent;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-stretch: 88%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  text-decoration: none;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.tab:first-child {
+  padding-inline-start: 0;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab.is-passed::before {
+  content: "▪";
+  font-size: 0.9em;
+  color: var(--pass);
+}
+
+.tab.is-current {
+  border-block-end-color: var(--ink);
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------- deck -- */
+/* One panel, not a scatter of cards. */
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: clamp(0.85rem, 2vw, 1.25rem);
+  background: var(--deck);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+}
+
+/* ---------------------------------------------------------------- tape -- */
+
+.strip {
+  position: relative;
+  block-size: clamp(4.5rem, 9vw, 6rem);
+  overflow: hidden;
+  border-radius: var(--r);
+  background: var(--tape);
+  box-shadow:
+    inset 0 1px 2px light-dark(rgb(0 0 0 / 0.09), rgb(0 0 0 / 0.5)),
+    inset 0 0 0 1px var(--rule);
+
+  /* The tape carries the mono metrics so that 1ch means one character
+     everywhere below — the head, the perforations, and the glyphs. */
+  font-family: var(--mono);
+  font-size: var(--tape-size);
+}
+
+/* Fade the tape into the deck at both ends. */
+.strip::before,
+.strip::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inline-size: 8%;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.strip::before {
+  inset-inline-start: 0;
+  background: linear-gradient(to right, var(--tape), transparent);
+}
+
+.strip::after {
+  inset-inline-end: 0;
+  background: linear-gradient(to left, var(--tape), transparent);
+}
+
+/* The head sits left of centre so most of the tape shows what is coming.
+   It is bolted to the chassis and never moves. */
+.strip-head {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(30% - 0.5ch);
+  inline-size: 1ch;
+  z-index: 1;
+  pointer-events: none;
+  background: color-mix(in oklab, var(--key-hue) 12%, transparent);
+  box-shadow:
+    inset 1px 0 0 color-mix(in oklab, var(--key-hue) 35%, transparent),
+    inset -1px 0 0 color-mix(in oklab, var(--key-hue) 35%, transparent);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+/* Upper jaw mark. */
+.strip-head::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 30%;
+  block-size: 3px;
+  background: var(--key-hue);
+}
+
+/* The lamp: which finger, shown where the character lands. */
+.strip-head::after {
+  content: "";
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline: 0;
+  block-size: 3px;
+  background: var(--key-hue);
+  box-shadow: 0 0 10px -1px var(--key-hue);
+}
+
+.strip.is-mistake .strip-head {
+  background: color-mix(in oklab, var(--fail) 18%, transparent);
+  box-shadow:
+    inset 1px 0 0 color-mix(in oklab, var(--fail) 55%, transparent),
+    inset -1px 0 0 color-mix(in oklab, var(--fail) 55%, transparent);
+}
+
+.strip.is-mistake .strip-head::before,
+.strip.is-mistake .strip-head::after {
+  background: var(--fail);
+  box-shadow: 0 0 10px -1px var(--fail);
+}
+
+.strip.is-done .strip-head {
+  background: none;
+  box-shadow: none;
+}
+
+.strip.is-done .strip-head::before,
+.strip.is-done .strip-head::after {
+  display: none;
+}
+
+.strip-track {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 30%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  white-space: pre;
+  font-weight: 400;
+  line-height: 1;
+  transform: translateX(calc(var(--cursor) * -1ch - 0.5ch));
+  transition: transform 90ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Sprocket holes, one per character cell. Because this layer rides inside
+   the carriage, the holes scroll past at exactly your keystroke rate. */
+.strip-perf {
+  position: absolute;
+  inset-block: 0.5rem;
+  inset-inline-start: -80ch;
+  inline-size: calc(100% + 160ch);
+  background-image:
+    radial-gradient(circle, var(--perf) 0 1.8px, transparent 2px),
+    radial-gradient(circle, var(--perf) 0 1.8px, transparent 2px);
+  background-size: 1ch 5px;
+  background-position: 0 0, 0 100%;
+  background-repeat: repeat-x;
+}
+
+.strip-typed {
+  color: color-mix(in oklab, var(--ink) 26%, transparent);
+}
+
+.strip-upcoming {
+  color: var(--ink-dim);
+}
+
+.strip-cursor {
+  color: var(--ink);
+}
+
+/* Progress is the edge of the tape itself, not a separate bar. */
+.strip-progress {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-start: 0;
+  z-index: 4;
+  block-size: 2px;
+  inline-size: var(--p, 0%);
+  background: var(--ink-dim);
+  transition: inline-size 120ms linear;
+}
+
+.is-passed .strip-progress {
+  background: var(--pass);
+}
+
+.is-short .strip-progress {
+  background: var(--hold);
+}
+
+.strip-count {
+  position: absolute;
+  inset-block-end: 0.35rem;
+  inset-inline-end: 0.6rem;
+  z-index: 4;
+  font-size: 0.625rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+
+/* --------------------------------------------------------------- input -- */
+
+.input {
+  inline-size: 100%;
+  padding: 0.75rem 0.9rem;
+  font-family: var(--mono);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--ink);
+  background: var(--deck-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  resize: vertical;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.input::placeholder {
+  color: var(--ink-faint);
+}
+
+.input:disabled {
+  opacity: 1;
+  color: var(--ink-dim);
+}
+
+.is-error .input {
+  border-color: var(--fail);
+}
+
+.is-short .input {
+  border-color: var(--hold);
+}
+
+.is-passed .input {
+  border-color: var(--pass);
+}
+
+/* -------------------------------------------------------------- gauges -- */
+
+.readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+  padding-block-start: 0.85rem;
+  border-block-start: 1px solid var(--rule);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-inline-size: 11rem;
+  flex: 1;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-stretch: 88%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.status-dot {
+  inline-size: 6px;
+  block-size: 6px;
+  background: var(--ink-faint);
+  flex: none;
+}
+
+.is-running .status-dot { background: var(--ink); }
+.is-error   .status-dot { background: var(--fail); }
+.is-short   .status-dot { background: var(--hold); }
+.is-passed  .status-dot { background: var(--pass); }
+
+.is-error .status  { color: var(--fail); }
+.is-passed .status { color: var(--pass); }
+
+.status-face {
+  font-family: "Segoe UI Symbol", "Apple Symbols", var(--sans);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-faint);
+}
+
+.metrics {
+  display: flex;
+}
+
+.metrics > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.1rem;
+  padding-inline: clamp(0.7rem, 2vw, 1.2rem);
+  border-inline-start: 1px solid var(--rule);
+}
+
+.metrics > div:last-child {
+  padding-inline-end: 0;
+}
+
+.metrics dt {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  font-stretch: 86%;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.metrics dd {
+  font-family: var(--mono);
+  font-size: 1.375rem;
+  font-weight: 400;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.metrics dd small {
+  margin-inline-start: 0.15em;
+  font-size: 0.5em;
+  color: var(--ink-faint);
+}
+
+/* ------------------------------------------------------------ controls -- */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.best {
+  margin-inline-start: auto;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.55rem 0.85rem;
+  font-family: var(--sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-stretch: 88%;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  background: none;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--r);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.btn:hover {
+  color: var(--ink);
+  border-color: var(--ink-faint);
+}
+
+.btn-primary {
+  background: var(--slab);
+  border-color: var(--slab);
+  color: var(--slab-on);
+}
+
+.btn-primary:hover {
+  background: color-mix(in oklab, var(--slab) 84%, var(--chassis));
+  border-color: transparent;
+  color: var(--slab-on);
+}
+
+.btn-quiet {
+  border-color: transparent;
+}
+
+.btn-quiet[aria-pressed="true"] {
+  background: var(--deck-2);
+  border-color: var(--rule-2);
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------ keyboard -- */
+
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.keyboard-row {
+  display: grid;
+  grid-template-columns: repeat(60, 1fr);
+  gap: 3px;
+}
+
+.key {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  block-size: clamp(1.75rem, 3.2vw, 2.4rem);
+  border: 1px solid var(--rule);
+  border-block-end-color: color-mix(in oklab, var(--key-hue) 45%, var(--rule));
+  border-radius: var(--r);
+  background: var(--deck);
+  font-family: var(--mono);
+  font-size: clamp(0.6rem, 1.05vw, 0.78rem);
+  font-weight: 400;
+  color: color-mix(in oklab, var(--key-hue) 70%, var(--ink));
+  transition: background 90ms ease, color 90ms ease, transform 90ms ease,
+              box-shadow 90ms ease, border-color 90ms ease;
+}
+
+.key-upper {
+  font-size: 0.66em;
+  line-height: 1;
+  opacity: 0.4;
+}
+
+.key-label {
+  line-height: 1.1;
+}
+
+.key-scenery {
+  background: none;
+  border-color: var(--rule);
+  border-block-end-color: var(--rule);
+  color: var(--ink-faint);
+  font-size: 0.6rem;
+}
+
+/* The tactile nub that tells your fingers they are on the home row. */
+.key-home::after {
+  content: "";
+  position: absolute;
+  inset-block-end: 4px;
+  inline-size: 30%;
+  block-size: 2px;
+  background: currentColor;
+  opacity: 0.7;
+}
+
+/* The lamp: press this one next. */
+.key-next {
+  background: var(--key-hue);
+  border-color: var(--key-hue);
+  color: light-dark(#fcfbf7, #0e1112);
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 2px color-mix(in oklab, var(--key-hue) 28%, transparent),
+    0 5px 14px -6px var(--key-hue);
+}
+
+.key-next .key-upper {
+  opacity: 0.75;
+}
+
+.keyboard.is-mistake .key-next {
+  background: var(--fail);
+  border-color: var(--fail);
+  box-shadow:
+    0 0 0 2px color-mix(in oklab, var(--fail) 28%, transparent),
+    0 5px 14px -6px var(--fail);
+}
+
+/* --------------------------------------------------------------- guide -- */
+
+.guide {
+  border-block-start: 1px solid var(--rule);
+}
+
+.guide-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0;
+  font-family: var(--sans);
+  font-size: 0.625rem;
+  font-weight: 600;
+  font-stretch: 86%;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.guide-toggle:hover {
+  color: var(--ink);
+}
+
+.guide-caret {
+  display: inline-block;
+  font-size: 0.8em;
+  transition: transform 140ms ease;
+}
+
+.guide-toggle[aria-expanded="true"] .guide-caret {
+  transform: rotate(90deg);
+}
+
+.guide-body {
+  max-inline-size: 68ch;
+  padding-block: 0.2rem 1rem;
+  color: var(--ink-dim);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+.guide-body p + p {
+  margin-block-start: 0.85rem;
+}
+
+.guide-tip {
+  font-size: 0.8125rem;
+  color: var(--ink-faint);
+}
+
+.guide-tip code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  padding: 0.1em 0.35em;
+  border-radius: var(--r);
+  background: var(--deck-2);
+  color: var(--ink);
+}
+
+.kbd {
+  display: inline-block;
+  padding: 0.12em 0.4em 0.18em;
+  font-family: var(--mono);
+  font-size: 0.85em;
+  font-weight: 500;
+  line-height: 1.25;
+  white-space: nowrap;
+  color: color-mix(in oklab, var(--key-hue) 75%, var(--ink));
+  background: color-mix(in oklab, var(--key-hue) 9%, transparent);
+  border: 1px solid color-mix(in oklab, var(--key-hue) 42%, var(--rule));
+  border-radius: var(--r);
+}
+
+/* -------------------------------------------------------------- footer -- */
+
+.foot {
+  padding: 1.25rem clamp(0.9rem, 2.5vw, 1.5rem);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--ink-faint);
+  border-block-start: 1px solid var(--rule);
+}
+
+.foot a {
+  color: var(--ink-dim);
+}
+
+.noscript {
+  display: grid;
+  gap: 0.5rem;
+  max-inline-size: 30rem;
+  margin: 4rem auto;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid var(--fail);
+  border-radius: var(--r);
+  color: var(--fail);
+}
+
+/* ---------------------------------------------------------- responsive -- */
+
+@media (max-width: 48rem) {
+  .topbar {
+    flex-wrap: wrap;
+    gap: 0.5rem 0.9rem;
+  }
+
+  .topbar-lesson {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .topbar-actions {
+    margin-inline-start: auto;
+  }
+
+  .tally {
+    display: none;
+  }
+
+  .readout {
+    gap: 0.75rem;
+  }
+
+  .metrics {
+    flex-wrap: wrap;
+    gap: 0.5rem 0;
+  }
+
+  .metrics > div:first-child {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+
+  .metrics dd {
+    font-size: 1.125rem;
+  }
+
+  .keyboard {
+    overflow-x: auto;
+  }
+
+  .best {
+    margin-inline-start: 0;
+    flex-basis: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ------------------------------------------------------------ additions -- */
+
+/* ---------------------------------------------------------- ruler extra -- */
+/* Each stop now carries the keys its chapter teaches, under the name, and
+   the road ahead is dimmed rather than hidden. */
+
+.stop-keys {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  color: var(--ink-faint);
+}
+
+.stop.is-current .stop-keys {
+  color: color-mix(in oklab, var(--slab-on) 55%, transparent);
+}
+
+.stop.is-locked {
+  opacity: 0.42;
+}
+
+.stop.is-locked::after {
+  content: "·";
+  position: absolute;
+  inset-block-start: 0.35rem;
+  inset-inline-end: 0.35rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: var(--ink-faint);
+}
+
+.stop.is-done:not(.is-current) .stop-title {
+  color: var(--ink);
+}
+
+.tab.is-locked {
+  opacity: 0.4;
+}
+
+/* --------------------------------------------------------------- panels -- */
+
+.panel {
+  padding: clamp(0.85rem, 2vw, 1.25rem);
+  background: var(--deck);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+}
+
+.pane-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--ink-dim);
+}
+
+.link {
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  border-block-end: 1px solid var(--rule-2);
+  cursor: pointer;
+}
+
+.link:hover {
+  border-block-end-color: var(--ink);
+}
+
+.topbar-sub {
+  color: var(--ink-faint);
+}
+
+/* ------------------------------------------------------------ the gate -- */
+/* The course is a line, and the line is enforced. This is what you get for
+   trying to jump ahead. */
+
+.pane.is-gate {
+  gap: 0.6rem;
+}
+
+.gate-title {
+  font-family: var(--mono);
+  font-size: 1rem;
+}
+
+.gate-body {
+  max-inline-size: 60ch;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--ink-dim);
+}
+
+.pane.is-gate .actions {
+  margin-block-start: 0.4rem;
+}
+
+/* -------------------------------------------------------------- progress -- */
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.stat-grid > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.15rem;
+  padding: 0.7rem 0.85rem;
+  background: var(--deck);
+}
+
+.stat-grid dt {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  font-stretch: 86%;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.stat-grid dd {
+  font-family: var(--mono);
+  font-size: 1.25rem;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.stat-grid dd small {
+  margin-inline-start: 0.25em;
+  font-size: 0.5em;
+  color: var(--ink-faint);
+}
+
+.stat-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.stat-note {
+  max-inline-size: 60ch;
+  font-size: 0.8125rem;
+  color: var(--ink-dim);
+}
+
+.spark {
+  inline-size: 100%;
+  block-size: 3rem;
+  overflow: visible;
+}
+
+.spark polyline {
+  fill: none;
+  stroke: var(--ink-dim);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Trouble keys, tinted by the finger that owes you an apology. */
+.trouble {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.trouble li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4em;
+  padding: 0.3rem 0.55rem;
+  font-family: var(--mono);
+  border: 1px solid color-mix(in oklab, var(--key-hue) 45%, var(--rule));
+  border-radius: var(--r);
+  background: color-mix(in oklab, var(--key-hue) 9%, transparent);
+}
+
+.trouble-key {
+  font-size: 0.9375rem;
+  color: color-mix(in oklab, var(--key-hue) 75%, var(--ink));
+}
+
+.trouble-count {
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+
+.btn-danger {
+  color: var(--fail);
+  border-color: var(--fail);
+}
+
+.btn-danger:hover {
+  color: var(--fail);
+  border-color: var(--fail);
+  background: color-mix(in oklab, var(--fail) 10%, transparent);
+}
+
+/* ---------------------------------------------------------- focus mode -- */
+/* Nothing on screen but the words. The text is set large, lights up as it is
+   consumed, and the next lesson starts on its own. */
+
+.focus {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-block-size: 100dvh;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  background: var(--tape);
+  cursor: text;
+}
+
+.focus-head,
+.focus-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.focus-head {
+  align-items: baseline;
+}
+
+.focus-where {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--ink-dim);
+}
+
+.focus-live {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+
+.focus-live b {
+  font-weight: 500;
+  color: var(--ink-dim);
+}
+
+.focus-text {
+  display: block;
+  align-self: center;
+  max-inline-size: 44ch;
+  margin-inline: auto;
+  padding-block: clamp(1.5rem, 5vh, 3rem);
+  font-family: var(--mono);
+  font-size: clamp(1.25rem, 2.6vw, 1.9rem);
+  line-height: 1.85;
+  letter-spacing: 0.01em;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  color: var(--ink-faint);
+}
+
+.glyph {
+  transition: color 80ms ease;
+}
+
+/* Typed: settled, quiet, out of the way. */
+.glyph.is-done {
+  color: color-mix(in oklab, var(--ink) 45%, transparent);
+}
+
+/* Wrong: the character you owe, struck through where it stands. */
+.glyph.is-wrong {
+  color: var(--fail);
+  background: color-mix(in oklab, var(--fail) 14%, transparent);
+  border-radius: 1px;
+}
+
+/* The head, in the colour of the finger that has to move next. */
+.glyph.is-cursor {
+  position: relative;
+  color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--key-hue);
+}
+
+.focus.is-mistake .glyph.is-cursor {
+  box-shadow: inset 0 -2px 0 var(--fail);
+}
+
+.focus-input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+  resize: none;
+}
+
+.focus-foot {
+  min-block-size: 2.5rem;
+  justify-content: center;
+  font-size: 0.8125rem;
+  color: var(--ink-faint);
+}
+
+.focus-hint code {
+  font-family: var(--mono);
+  padding: 0.1em 0.35em;
+  border-radius: var(--r);
+  background: var(--deck-2);
+  color: var(--ink-dim);
+}
+
+.focus-result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--ink-dim);
+}
+
+.focus-result strong {
+  font-family: var(--sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-stretch: 88%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.focus.is-passed .focus-result strong {
+  color: var(--pass);
+}
+
+.focus.is-short .focus-result strong {
+  color: var(--hold);
+}
+
+.focus-target {
+  color: var(--ink-faint);
+}
+
+@media (max-width: 48rem) {
+  .focus-live {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .focus-text {
+    line-height: 1.7;
+  }
+}
